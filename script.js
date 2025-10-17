@@ -11,10 +11,10 @@ document.addEventListener('DOMContentLoaded', () => {
         persistentAreas: [],
         serialNumberCache: new Set(),
         cameraStream: null,
-        // --- Cámara Simplificada ---
-        availableCameras: [], // Todavía útil para saber si hay cámaras
+        // --- Cámara v7.17 ---
+        // availableCameras eliminado, ya no se usa para seleccionar
         // selectedPhotoCameraId y selectedQrCameraId ELIMINADOS
-        // --- Fin Simplificación ---
+        // --- Fin Cámara v7.17 ---
         readOnlyMode: false,
         activityLog: [],
         institutionalReportCheckboxes: {},
@@ -177,12 +177,13 @@ document.addEventListener('DOMContentLoaded', () => {
         reports: {
             stats: document.getElementById('general-stats'), userFilter: document.getElementById('report-user-filter'),
             areaFilter: document.getElementById('report-area-filter'),
-            reportButtons: document.querySelectorAll('.report-btn'),
+            reportButtons: document.querySelectorAll('.report-btn'), // Usa clase genérica
             exportLabelsXlsxBtn: document.getElementById('export-labels-xlsx-btn'),
             tableContainer: document.getElementById('report-table-container'),
             tableTitle: document.getElementById('report-table-title'),
             tableBody: document.getElementById('report-table-body'),
             exportXlsxBtn: document.getElementById('export-xlsx-btn'),
+            // printPendingBtn eliminado ya que se usa report-btn
         },
         settings: {
             themes: document.querySelectorAll('[data-theme]'), autosaveInterval: document.getElementById('autosave-interval'),
@@ -194,6 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
             summaryAuthor: document.getElementById('summary-author'),
             summaryAreaResponsible: document.getElementById('summary-area-responsible'),
             summaryLocation: document.getElementById('summary-location'),
+            // generateSummaryBtn y tasksReportBtn eliminados, usar report-btn
             directoryContainer: document.getElementById('directory-container'),
             directoryCount: document.getElementById('directory-count'),
             aboutHeader: document.getElementById('about-header'),
@@ -300,14 +302,14 @@ document.addEventListener('DOMContentLoaded', () => {
             modelo: document.getElementById('detail-view-modelo'),
             serie: document.getElementById('detail-view-serie'),
             usuario: document.getElementById('detail-view-usuario'),
-            area: document.getElementById('detail-view-area'),
-            areaWarning: document.getElementById('detail-view-area-warning'),
+            area: document.getElementById('detail-view-area'), // Añadido
+            areaWarning: document.getElementById('detail-view-area-warning'), // Añadido
             ubicarBtn: document.getElementById('detail-view-ubicar-btn'),
             reetiquetarBtn: document.getElementById('detail-view-reetiquetar-btn'),
             notaBtn: document.getElementById('detail-view-nota-btn'),
             fotoBtn: document.getElementById('detail-view-foto-btn')
         },
-        preprintModal: {
+        preprintModal: { // Añadido para edición pre-impresión
             modal: document.getElementById('preprint-edit-modal'),
             title: document.getElementById('preprint-title'),
             fieldsContainer: document.getElementById('preprint-fields'),
@@ -518,7 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
             persistentAreas: [],
             serialNumberCache: new Set(),
             cameraStream: null,
-            availableCameras: state.availableCameras, // Mantener las cámaras detectadas
+            // availableCameras eliminado, ya no se usa
             // selectedPhotoCameraId y selectedQrCameraId ya no existen
             readOnlyMode: false,
             activityLog: [],
@@ -558,7 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const stateToSave = { ...state };
             delete stateToSave.serialNumberCache;
             delete stateToSave.cameraStream;
-            delete stateToSave.availableCameras; // No es necesario guardar esto
+            delete stateToSave.availableCameras; // Asegurarse de no guardar esto
             // selectedPhotoCameraId y selectedQrCameraId ya no existen
             localStorage.setItem('inventarioProState', JSON.stringify(stateToSave));
         } catch (e) {
@@ -648,8 +650,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
 
         const contentArea = elements.mainContentArea;
-        contentArea.className = 'p-6 rounded-xl shadow-md glass-effect';
-        contentArea.classList.add(`bg-tab-${tabName}`);
+        contentArea.className = 'p-6 rounded-xl shadow-md glass-effect'; // Clase base
+        // Agrega clase específica de tab si es necesario (ya no están en styles.css)
+        // contentArea.classList.add(`bg-tab-${tabName}`);
 
         logActivity('Navegación', `Se cambió a la pestaña: ${tabName}.`);
 
@@ -687,7 +690,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const proceedWithUpload = () => {
             elements.loadingOverlay.overlay.classList.add('show');
-            elements.dashboard.headerAndDashboard.classList.add('hidden');
+            // Ocultar dashboard con la nueva estructura
+            const headerDashboard = document.getElementById('header-and-dashboard');
+             if (headerDashboard) headerDashboard.classList.add('hidden');
+
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
@@ -702,10 +708,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     showToast('Error al procesar el archivo. Asegúrate de que el formato es correcto.', 'error');
                 } finally {
                     elements.loadingOverlay.overlay.classList.remove('show');
+                     // Mostrar dashboard de nuevo si existe
+                     if (headerDashboard) headerDashboard.classList.remove('hidden');
                 }
             };
             reader.onerror = () => {
                 elements.loadingOverlay.overlay.classList.remove('show');
+                 if (headerDashboard) headerDashboard.classList.remove('hidden');
                 showToast('Error al leer el archivo.', 'error');
             };
             reader.readAsBinaryString(file);
@@ -1299,11 +1308,11 @@ document.addEventListener('DOMContentLoaded', () => {
         detailView.modelo.textContent = item['MODELO'] || 'N/A';
         detailView.serie.textContent = item['SERIE'] || 'N/A';
         detailView.usuario.textContent = item['NOMBRE DE USUARIO'] || 'Sin Asignar';
-        detailView.area.textContent = areaName;
+        detailView.area.textContent = areaName; // Añadido para mostrar área original
 
-        const warningContainer = detailView.areaWarning;
-        warningContainer.innerHTML = '';
-        warningContainer.className = 'mt-3 p-3 rounded-lg text-sm hidden';
+        const warningContainer = detailView.areaWarning; // Añadido
+        warningContainer.innerHTML = ''; // Limpiar advertencias previas
+        warningContainer.className = 'mt-3 p-3 rounded-lg text-sm hidden'; // Ocultar por defecto
 
         const activeUser = state.activeResguardante;
         if (activeUser && item.areaOriginal !== activeUser.area) {
@@ -1415,8 +1424,9 @@ document.addEventListener('DOMContentLoaded', () => {
             saveState();
             renderLoadedLists();
 
+            // Usar showPreprintModal para confirmar datos antes de generar
             showPreprintModal('area_closure', { areaId, responsible, location });
-            closeModal();
+            closeModal(); // Cerrar el modal de entrada de datos
         };
 
         const closeModal = () => {
@@ -1429,28 +1439,25 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelBtn.addEventListener('click', closeModal, { once: true });
     }
 
-    // --- Cámara Simplificada: getCameraDevices ---
+    // --- Cámara Simplificada v7.17: getCameraDevices ---
     async function getCameraDevices() {
         try {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-                console.warn("Enumeración de dispositivos no soportada.");
-                state.availableCameras = []; // Marcar que no sabemos
-                return;
-            }
-            // Solo intentar obtener permiso, no necesitamos la lista ahora
+            // Solo pedir permiso para activar la cámara, no necesitamos la lista
             await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
             console.log("Permiso de cámara obtenido (o ya existía).");
-             // Podríamos aún listar las cámaras si quisiéramos depurar, pero no las usaremos
-             // const devices = await navigator.mediaDevices.enumerateDevices();
-             // state.availableCameras = devices.filter(device => device.kind === 'videoinput');
         } catch (err) {
-            console.error("Error al obtener permiso/dispositivos de cámara:", err);
-            // No mostrar toast aquí, ya que el inicio fallará si no hay permiso
+            console.error("Error al obtener permiso de cámara:", err);
+            // Considerar mostrar un toast si el error es grave (ej. NotAllowedError)
+             if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+                 showToast("Permiso para acceder a la cámara denegado.", "error");
+             } else {
+                 showToast("No se pudo inicializar la cámara.", "warning");
+             }
         }
     }
-    // Ya no necesitamos populateCameraSelectors
+    // Ya no se necesita populateCameraSelectors
 
-    // --- Cámara Simplificada: startCamera ---
+    // --- Cámara Simplificada v7.17: startCamera ---
     async function startCamera() {
         if (state.readOnlyMode) return;
         const { cameraStream, uploadContainer, cameraViewContainer } = elements.photo;
@@ -1458,28 +1465,30 @@ document.addEventListener('DOMContentLoaded', () => {
         stopCamera(); // Detener stream anterior si existe
 
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            // Pedir CUALQUIER cámara
-            const constraints = { video: true };
+            const constraints = { video: { facingMode: 'environment' } }; // Intentar trasera directamente
 
             try {
                 state.cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-                console.log("Cámara iniciada (por defecto del navegador).");
+                console.log("Usando cámara 'environment'.");
 
                 cameraStream.srcObject = state.cameraStream;
                 uploadContainer.classList.add('hidden');
                 cameraViewContainer.classList.remove('hidden');
 
             } catch (err) {
-                showToast('No se pudo acceder a la cámara. Revisa los permisos.', 'error');
-                console.error("Error al acceder a la cámara: ", err);
-                // Si falla aquí, no hay fallback posible
+                // Si 'environment' falla, mostrar error (no hay fallback en esta versión)
+                showToast('No se pudo acceder a la cámara trasera. Revisa los permisos.', 'error');
+                console.error("Error al acceder a la cámara 'environment': ", err);
+                 // Opcional: mostrar opciones de subida de nuevo si falla
+                 uploadContainer.classList.remove('hidden');
+                 cameraViewContainer.classList.add('hidden');
             }
         } else {
             showToast('Tu navegador no soporta el acceso a la cámara.', 'error');
         }
     }
 
-    // --- Cámara Simplificada: startQrScanner ---
+    // --- Cámara Simplificada v7.17: startQrScanner ---
     async function startQrScanner() {
         if (state.readOnlyMode) return;
         elements.qrScannerModal.classList.add('show');
@@ -1490,7 +1499,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.warn("Error menor al detener QR Scanner previo:", stopErr);
             }
         }
-        // Asegurarse de que el elemento existe antes de crear la instancia
+         // Asegurarse de que el elemento existe antes de crear la instancia
         if (!document.getElementById("qr-reader")){
              console.error("Elemento qr-reader no encontrado");
              elements.qrScannerModal.classList.remove('show');
@@ -1519,32 +1528,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
-        // Pedir CUALQUIER cámara (default)
-        const cameraIdOrConfig = undefined; // Dejar que html5-qrcode use la default
-
+        // Intentar iniciar directamente con 'environment'
         html5QrCode.start(
-            cameraIdOrConfig,
+            { facingMode: "environment" },
             config,
             qrCodeSuccessCallback
         ).catch(err => {
-            showToast('Error al iniciar la cámara para QR. Revisa los permisos.', 'error');
-            console.error("Error al iniciar el escaner QR: ", err);
-            stopQrScanner();
+            // Si falla 'environment', mostrar error (sin fallback)
+            showToast('Error al iniciar cámara trasera para QR. Revisa permisos.', 'error');
+            console.error("Error al iniciar el escaner QR con 'environment': ", err);
+            stopQrScanner(); // Cerrar modal si falla
         });
     }
 
+    function stopCamera() {
+        if (state.cameraStream) {
+            state.cameraStream.getTracks().forEach(track => track.stop());
+            state.cameraStream = null;
+            console.log("Stream de cámara detenido.");
+        }
+    }
 
-    function stopQrScanner() {
+     function stopQrScanner() {
         if (html5QrCode && html5QrCode.isScanning) {
             html5QrCode.stop().then(ignore => {
+                console.log("QR Scanner detenido.");
                 elements.qrScannerModal.classList.remove('show');
             }).catch(err => {
                 console.warn("Error menor al detener QR Scanner:", err);
-                elements.qrScannerModal.classList.remove('show');
+                elements.qrScannerModal.classList.remove('show'); // Asegurar cierre
             });
         } else {
-             // Si no estaba escaneando, solo cerrar el modal
-            elements.qrScannerModal.classList.remove('show');
+            elements.qrScannerModal.classList.remove('show'); // Cerrar si no estaba escaneando
         }
     }
 
@@ -1575,7 +1590,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.areas = [...new Set([...areasFromInventory, ...areasFromUsers, ...persistentAreas])].filter(Boolean).sort();
 
         [elements.userForm.areaSelect, elements.reports.areaFilter, elements.inventory.areaFilter, elements.editUserAreaSelect, elements.adicionales.areaFilter].forEach(select => {
-            if (!select) return; // Asegurarse de que el elemento existe
+            if (!select) return;
             const selectedValue = select.value;
             const firstOpt = select.id.includes('user-area-select') ? '<option value="">Seleccione</option>' : '<option value="all">Todas</option>';
             select.innerHTML = firstOpt + state.areas.map(area => `<option value="${area}" ${selectedValue === area ? 'selected' : ''}>${area}</option>`).join('');
@@ -1590,7 +1605,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const users = state.resguardantes.map(u => u.name).sort();
 
         userSelects.forEach(select => {
-             if (!select) return; // Asegurarse de que el elemento existe
+             if (!select) return;
             const selectedValue = select.value;
             select.innerHTML = '<option value="all">Todos los usuarios</option>' +
                                users.map(user => `<option value="${user}">${user}</option>`).join('');
@@ -1603,7 +1618,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function populateBookTypeFilter() {
         const bookTypes = [...new Set(state.inventory.map(item => item.listadoOriginal))].filter(Boolean).sort();
         const select = elements.inventory.bookTypeFilter;
-         if (!select) return; // Asegurarse de que el elemento existe
+         if (!select) return;
         const staticOptions = Array.from(select.querySelectorAll('option[value]:not([value="all"])')).map(opt => opt.value);
         const allTypes = [...new Set([...staticOptions, ...bookTypes])].sort();
 
@@ -1993,7 +2008,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => printWindow.print(), 500);
     }
 
-    function generateTasksReport(options = {}) {
+    function generateTasksReport(returnAsHtml = false) {
         const itemsWithNotes = Object.keys(state.notes).filter(key => state.notes[key].trim() !== '');
         const itemsWithPendingLabels = state.inventory.filter(item => item['IMPRIMIR ETIQUETA'] === 'SI');
         const additionalItems = state.additionalItems;
@@ -2003,7 +2018,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (itemsWithNotes.length === 0 && itemsWithPendingLabels.length === 0 && additionalItems.length === 0 && mismatchedItems.length === 0 && itemsARegularizar.length === 0) {
             const noTasksHtml = '<h2>¡Excelente! No hay acciones pendientes.</h2>';
-            if (options.returnAsHtml) {
+            if (returnAsHtml) {
                 return `<h2>Plan de Acción Recomendado</h2>${noTasksHtml}`;
             }
              logActivity('Plan de Acción', 'Generado sin acciones pendientes.');
@@ -2093,7 +2108,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </tbody>
         </table>`;
 
-        if (options.returnAsHtml) {
+        if (returnAsHtml) {
             return `<h2>Plan de Acción Recomendado</h2>${content}`;
         }
 
@@ -2117,7 +2132,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => printWindow.print(), 500);
     }
 
-    function generateInventoryReport(options = {}) {
+    function generateInventoryReport() {
         const selectedUser = elements.reports.userFilter.value;
         const selectedArea = elements.reports.areaFilter.value;
 
@@ -2477,10 +2492,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function renderDirectory() {
         const container = elements.settings.directoryContainer;
-        const countEl = elements.settings.directoryCount;
+        const countEl = elements.settings.directoryCount; // Asegúrate de que este ID existe en tu HTML si quieres mostrar el conteo
         const areas = Object.keys(state.areaDirectory);
 
-        countEl.textContent = `Total: ${areas.length}`;
+        if (countEl) countEl.textContent = `Total: ${areas.length}`;
 
         if (areas.length === 0) {
             container.innerHTML = '<p class="text-gray-500">No se han cargado áreas con información de responsable.</p>';
@@ -2663,32 +2678,9 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.employeeNumberInput.value = '';
     }
 
-    // --- Cámara Simplificada: stopCamera ---
-    function stopCamera() {
-        if (state.cameraStream) {
-            state.cameraStream.getTracks().forEach(track => track.stop());
-            state.cameraStream = null;
-            console.log("Stream de cámara detenido.");
-        }
-    }
-
-
-    function generateInstitutionalAdicionalesReport(options = {}) {
-        const institutionalItems = state.additionalItems.filter(item => item.personal === 'No');
-
-        const reportOptions = {
-            isInstitutionalReport: true,
-            headers: ['✓', 'Descripción', 'Clave Original', 'Área Procedencia', 'Marca', 'Serie', 'Usuario', 'Clave Asignada', 'Acción']
-        };
-
-        renderReportTable(institutionalItems, 'Regularización de Bienes Adicionales Institucionales', reportOptions);
-        showToast(`Reporte generado con ${institutionalItems.length} bienes institucionales.`);
-        logActivity('Reporte Adicionales (Institucionales)', `Generado con ${institutionalItems.length} bienes.`);
-    }
-
     function initialize() {
         photoDB.init().catch(err => console.error('No se pudo iniciar la base de datos de fotos:', err));
-        getCameraDevices(); // Detectar cámaras al inicio (ya no puebla selectores).
+        getCameraDevices(); // Detectar cámaras al inicio.
 
         elements.employeeLoginBtn.addEventListener('click', handleEmployeeLogin);
         elements.employeeNumberInput.addEventListener('keydown', e => {
@@ -2699,7 +2691,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         elements.dashboard.toggleBtn.addEventListener('click', () => {
-            elements.dashboard.headerAndDashboard.classList.toggle('hidden');
+            const dashboardContainer = document.getElementById('dashboard-container');
+            const headerAndDashboard = document.getElementById('header-and-dashboard');
+            if (dashboardContainer && headerAndDashboard) {
+                headerAndDashboard.classList.toggle('hidden');
+            } else {
+                 console.error("No se encontró el contenedor del dashboard para ocultar/mostrar.");
+            }
         });
 
         elements.logo.title.addEventListener('click', () => {
@@ -2855,16 +2853,26 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!button || state.readOnlyMode) return;
             const index = parseInt(button.dataset.index, 10);
 
+            // Asegurarse de que el índice es válido
+            if (isNaN(index) || index < 0 || index >= state.resguardantes.length) {
+                console.error("Índice de usuario inválido:", index);
+                return;
+            }
+            const user = state.resguardantes[index];
+            if (!user) {
+                 console.error("Usuario no encontrado en el índice:", index);
+                 return;
+            }
+
+
             if (button.classList.contains('activate-user-btn')) {
-                const user = state.resguardantes[index];
                 state.activeResguardante = user;
                 logActivity('Usuario activado', `Usuario: ${user.name}`);
                 showToast(`Usuario ${user.name} activado.`);
-                renderUserList();
+                renderUserList(); // Actualizar UI para reflejar el cambio
             } else if (button.classList.contains('edit-user-btn')) {
                 showEditUserModal(index);
             } else if (button.classList.contains('delete-user-btn')) {
-                const user = state.resguardantes[index];
                 const assignedItemsCount = state.inventory.filter(item => item['NOMBRE DE USUARIO'] === user.name).length;
 
                 let title = '¿Eliminar Usuario?';
@@ -2894,10 +2902,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         logActivity('Acción deshecha', `Restaurado usuario eliminado: ${user.name}`);
                     });
 
-                    saveState();
+                    saveState(); // Guardar el estado después de la eliminación inicial
                 });
             }
         });
+
 
         elements.adicionales.form.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
@@ -2926,10 +2935,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (newSerie && state.serialNumberCache.has(newSerie.toLowerCase())) {
                 return showToast('Advertencia: La serie de este bien ya existe en el inventario.', 'warning');
             }
+             const newClave = newItem.clave.trim(); // Verificar clave también
+             if (newClave && state.serialNumberCache.has(newClave.toLowerCase())) {
+                return showToast('Advertencia: La clave única de este bien ya existe en el inventario.', 'warning');
+             }
 
             newItem.usuario = state.activeResguardante.name;
-            newItem.id = generateUUID();
-            newItem.fechaRegistro = new Date().toISOString();
+            newItem.id = generateUUID(); // Usar UUID
+            newItem.fechaRegistro = new Date().toISOString(); // Añadir fecha de registro
 
             const finalizeItemAddition = (item) => {
                 state.additionalItems.push(item);
@@ -2938,6 +2951,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.adicionales.form.reset();
                 document.getElementById('ad-clave').value = '';
                 document.querySelector('#adicional-form input[name="personal"][value="No"]').checked = true;
+                // Limpiar feedback de duplicados
+                document.getElementById('ad-clave-feedback').textContent = '';
+                document.getElementById('ad-serie-feedback').textContent = '';
                 renderAdicionalesList(); saveState(); renderDashboard(); updateSerialNumberCache();
                 document.getElementById('ad-clave').focus();
             };
@@ -2962,25 +2978,26 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.adicionales.userFilter.addEventListener('change', renderAdicionalesList);
 
         elements.adicionales.list.addEventListener('click', e => {
-            if (state.readOnlyMode) return;
+             if (state.readOnlyMode) return; // Añadir chequeo de solo lectura
 
             const editBtn = e.target.closest('.edit-adicional-btn');
             const deleteBtn = e.target.closest('.delete-adicional-btn');
             const photoBtn = e.target.closest('.adicional-photo-btn');
 
-            const id = editBtn?.dataset.id || deleteBtn?.dataset.id || photoBtn?.dataset.id;
+            const id = editBtn?.dataset.id || deleteBtn?.dataset.id || photoBtn?.dataset.id; // Usar UUID
 
             if (!id) return;
 
-            const item = state.additionalItems.find(i => i.id === id);
-            if (!item) return;
+             const item = state.additionalItems.find(i => i.id === id); // Buscar por UUID
+             if (!item) {
+                 console.error("No se encontró el bien adicional con ID:", id);
+                 return;
+             }
 
-            if (editBtn) {
-                showEditAdicionalModal(id);
-            }
 
+            if (editBtn) showEditAdicionalModal(id); // Pasar UUID
             if (deleteBtn) {
-                showConfirmationModal('Eliminar Bien Adicional', `¿Seguro que quieres eliminar "${item.descripcion}"?`, () => {
+                 showConfirmationModal('Eliminar Bien Adicional', `¿Seguro que quieres eliminar "${item.descripcion}"?`, () => {
                     state.additionalItems = state.additionalItems.filter(i => i.id !== id);
                     photoDB.deleteItem(`additional-${id}`);
                     delete state.additionalPhotos[id];
@@ -2988,25 +3005,40 @@ document.addEventListener('DOMContentLoaded', () => {
                     renderDashboard();
                     saveState();
                     updateSerialNumberCache();
-                    logActivity('Bien adicional eliminado', `Descripción: ${item.descripcion}`);
+                    logActivity('Bien adicional eliminado', `Descripción: ${item.descripcion}, ID: ${id}`);
                     showToast('Bien adicional eliminado.');
                 });
             }
-
-            if (photoBtn) {
-                showPhotoModal('additional', id);
-            }
+            if (photoBtn) showPhotoModal('additional', id); // Pasar UUID
         });
 
 
         elements.reports.exportXlsxBtn.addEventListener('click', exportInventoryToXLSX);
         elements.reports.exportLabelsXlsxBtn.addEventListener('click', exportLabelsToXLSX);
-
+        // Usar la clase .report-btn para todos los botones de reporte
         elements.reports.reportButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const reportType = button.dataset.reportType;
                 if (!reportType) return;
-                showPreprintModal(reportType);
+                // Usar preprint modal para reportes que lo necesiten
+                const needsPreprint = ['session_summary', 'area_closure', 'simple_pending', 'individual_resguardo', 'adicionales_informe'];
+                if (needsPreprint.includes(reportType)) {
+                     showPreprintModal(reportType);
+                } else {
+                    // Generar reporte directamente si no necesita preimpresión
+                    const reportConfig = {
+                        'inventory': generateInventoryReport,
+                        'tasks_report': generateTasksReport,
+                        'labels': () => renderReportTable(state.inventory.filter(item => item['IMPRIMIR ETIQUETA'] === 'SI'), 'Reporte de Etiquetas', { withCheckboxes: true, reportType: 'labels', headers: ['Acción', 'Clave Única', 'Descripción', 'Usuario'] }),
+                        'pending': () => renderReportTable(state.inventory.filter(item => item.UBICADO !== 'SI'), 'Reporte de Bienes Pendientes', { withCheckboxes: false, headers: ['Clave Única', 'Descripción', 'Serie', 'Área Original'] }),
+                        'notes': () => renderReportTable(state.inventory.filter(item => state.notes[item['CLAVE UNICA']]), 'Reporte de Notas', { withCheckboxes: true, reportType: 'notes', headers: ['Acción', 'Clave Única', 'Descripción', 'Nota'] }),
+                        'mismatched': () => renderReportTable(state.inventory.filter(item => item.areaIncorrecta), 'Reporte de Bienes Fuera de Área', { withCheckboxes: true, reportType: 'mismatched', headers: ['Acción', 'Clave Única', 'Descripción', 'Área Original', 'Usuario/Área Actual'] }),
+                        'institutional_adicionales': generateInstitutionalAdicionalesReport
+                    };
+                     if (reportConfig[reportType]) {
+                        reportConfig[reportType]();
+                    }
+                }
             });
         });
 
@@ -3015,7 +3047,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(state.readOnlyMode) return;
             const saveBtn = e.target.closest('.save-new-clave-btn');
             if (saveBtn) {
-                const itemId = saveBtn.dataset.id;
+                const itemId = saveBtn.dataset.id; // Usar UUID
                 const row = saveBtn.closest('tr');
                 const input = row.querySelector('.new-clave-input');
                 const newClave = input.value.trim();
@@ -3027,7 +3059,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
-                const itemIndex = state.additionalItems.findIndex(i => i.id === itemId);
+                const itemIndex = state.additionalItems.findIndex(i => i.id === itemId); // Buscar por UUID
                 if (itemIndex !== -1) {
                     state.additionalItems[itemIndex].claveAsignada = newClave;
                     updateSerialNumberCache();
@@ -3049,7 +3081,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             else if (checkbox.classList.contains('institutional-report-checkbox')) {
-                const itemId = checkbox.dataset.id;
+                const itemId = checkbox.dataset.id; // UUID
                 if (itemId) {
                     state.institutionalReportCheckboxes[itemId] = checkbox.checked;
                     saveState();
@@ -3057,7 +3089,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             else if (checkbox.classList.contains('action-plan-checkbox')) {
                 const type = checkbox.dataset.type;
-                const id = checkbox.dataset.id;
+                const id = checkbox.dataset.id; // Puede ser clave (string) o ID (UUID string)
                 if (type && id && state.actionCheckboxes[type]) {
                     state.actionCheckboxes[type][id] = checkbox.checked;
                     saveState();
@@ -3078,8 +3110,8 @@ document.addEventListener('DOMContentLoaded', () => {
             filterAndRenderInventory(); saveState();
         });
         elements.editAdicionalModal.saveBtn.addEventListener('click', () => {
-            const id = elements.editAdicionalModal.saveBtn.dataset.id;
-            const itemIndex = state.additionalItems.findIndex(i => i.id === id);
+            const id = elements.editAdicionalModal.saveBtn.dataset.id; // UUID
+            const itemIndex = state.additionalItems.findIndex(i => i.id === id); // Buscar por UUID
             if (itemIndex === -1) return;
             const formData = new FormData(elements.editAdicionalModal.form);
             const updatedData = Object.fromEntries(formData.entries());
@@ -3100,8 +3132,8 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.photo.uploadContainer.classList.remove('hidden');
         });
         elements.photo.captureBtn.addEventListener('click', () => {
-            const { cameraStream, photoCanvas, input } = elements.photo;
-             // Asegurarse de que el stream y canvas existen
+             const { cameraStream, photoCanvas, input } = elements.photo;
+            // Asegurarse de que el stream y canvas existen y stream está activo
             if (!cameraStream || !cameraStream.active || !photoCanvas) {
                 showToast("Error: La cámara no está activa o no se encontró el canvas.", "error");
                 console.error("cameraStream:", cameraStream, "photoCanvas:", photoCanvas);
@@ -3128,7 +3160,7 @@ document.addEventListener('DOMContentLoaded', () => {
             photoCanvas.toBlob(blob => {
                 if (blob) {
                     const type = input.dataset.type;
-                    const id = input.dataset.id;
+                    const id = input.dataset.id; // Clave o UUID
                     if (blob.size > 2 * 1024 * 1024) return showToast('La imagen es demasiado grande (máx 2MB).', 'error');
 
                     photoDB.setItem(`${type}-${id}`, blob).then(() => {
@@ -3147,10 +3179,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
 
+
         elements.photo.input.addEventListener('change', e => {
             const file = e.target.files[0];
             const type = e.target.dataset.type;
-            const id = e.target.dataset.id;
+            const id = e.target.dataset.id; // Clave o UUID
             if (file && type && id) {
                 if (file.size > 2 * 1024 * 1024) return showToast('La imagen es demasiado grande (máx 2MB).', 'error');
                 photoDB.setItem(`${type}-${id}`, file).then(() => {
@@ -3166,7 +3199,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         elements.photo.deleteBtn.addEventListener('click', e => {
             const type = e.target.dataset.type;
-            const id = e.target.dataset.id;
+            const id = e.target.dataset.id; // Clave o UUID
             showConfirmationModal('Eliminar Foto', `¿Seguro que quieres eliminar la foto?`, () => {
                 photoDB.deleteItem(`${type}-${id}`).then(() => {
                     if (type === 'inventory') { delete state.photos[id]; filterAndRenderInventory(); updateDetailViewPhoto(id); }
@@ -3181,7 +3214,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         elements.editUserSaveBtn.addEventListener('click', e => {
-            const index = e.target.dataset.userIndex;
+            const index = parseInt(e.target.dataset.userIndex, 10);
+             // Añadir validación del índice
+             if (isNaN(index) || index < 0 || index >= state.resguardantes.length) {
+                 console.error("Índice inválido al guardar usuario:", index);
+                 return showToast("Error al guardar: usuario no encontrado.", "error");
+             }
+
             const oldName = state.resguardantes[index].name;
             const newName = document.getElementById('edit-user-name').value;
             state.resguardantes[index].name = newName;
@@ -3211,7 +3250,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         [elements.noteCancelBtn, elements.photo.closeBtn, elements.editUserCancelBtn, elements.editAdicionalModal.cancelBtn, elements.qrDisplayModal.closeBtn, elements.itemDetailsModal.closeBtn, elements.preprintModal.cancelBtn].forEach(btn =>
             btn.addEventListener('click', () => {
-                stopCamera(); // Asegurarse de detener la cámara al cerrar cualquier modal
+                stopCamera();
                 btn.closest('.modal-overlay').classList.remove('show');
             })
         );
@@ -3749,8 +3788,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     areaFullName: state.areaNames[data.areaId] || `Área ${data.areaId}`,
                     entrega: state.currentUser.name,
                     recibe: data.responsible,
-                    recibeCargo: state.areaDirectory[data.areaId]?.name || 'Responsable de Área'
+                    recibeCargo: state.areaDirectory[data.areaId]?.name || 'Responsable de Área' // Intentar obtener nombre real
                 };
+                 // Corregir para usar 'title' del directorio si existe
+                 if (state.areaDirectory[data.areaId]?.title) {
+                     defaultValues.recibeCargo = state.areaDirectory[data.areaId].title;
+                 } else {
+                     defaultValues.recibeCargo = 'Responsable de Área'; // Fallback
+                 }
                 fieldsHtml = `
                     <div><label class="block text-sm font-medium">Nombre Completo del Área:</label><input type="text" id="preprint-areaFullName" class="mt-1 block w-full p-2 border rounded-md" value="${defaultValues.areaFullName}"></div>
                     <div><label class="block text-sm font-medium">Ubicación de Firma:</label><input type="text" id="preprint-location" class="mt-1 block w-full p-2 border rounded-md" value="${defaultValues.location}"></div>
@@ -3793,6 +3838,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 break;
             default:
+                // Si no necesita preimpresión, simplemente no mostramos el modal y ejecutamos directo
                 const reportConfig = {
                     'inventory': generateInventoryReport,
                     'tasks_report': generateTasksReport,
@@ -3802,10 +3848,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     'mismatched': () => renderReportTable(state.inventory.filter(item => item.areaIncorrecta), 'Reporte de Bienes Fuera de Área', { withCheckboxes: true, reportType: 'mismatched', headers: ['Acción', 'Clave Única', 'Descripción', 'Área Original', 'Usuario/Área Actual'] }),
                     'institutional_adicionales': generateInstitutionalAdicionalesReport
                 };
-                if (reportConfig[reportType]) {
+                 if (reportConfig[reportType]) {
                     reportConfig[reportType]();
+                } else {
+                    console.error("Tipo de reporte desconocido:", reportType);
                 }
-                return;
+                return; // Salir, no mostrar modal
         }
 
         title.textContent = titleText;
@@ -3818,7 +3866,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const inputs = fieldsContainer.querySelectorAll('input');
             inputs.forEach(input => {
                 const key = input.id.replace('preprint-', '');
-                updatedOptions[key] = input.value;
+                 if (updatedOptions.hasOwnProperty(key)) { // Asegurarse de que la clave exista
+                    updatedOptions[key] = input.value;
+                 }
             });
 
             switch (reportType) {
@@ -3843,9 +3893,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (selectedArea !== 'all') {
                         const usersInArea = state.resguardantes.filter(u => u.area === selectedArea).map(u => u.name);
                         itemsToPrint = itemsToPrint.filter(item => usersInArea.includes(item.usuario));
+                         // Usar el nombre del área si no hay usuario específico
+                        reportTitle = (selectedUser === 'all') ? (state.areaNames[selectedArea] || `Área ${selectedArea}`) : selectedUser;
                     }
                     if (selectedUser !== 'all') {
                         itemsToPrint = itemsToPrint.filter(item => item.usuario === selectedUser);
+                        reportTitle = selectedUser;
                     }
                     generatePrintableResguardo('Informe de Bienes Adicionales', updatedOptions.recibe, itemsToPrint, true, updatedOptions);
                     break;
@@ -3854,5 +3907,5 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    initialize(); // Llamar a initialize al final
-}); // Fin del DOMContentLoaded
+    initialize();
+});
