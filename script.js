@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
             photoCanvas: document.getElementById('photo-canvas'),
             captureBtn: document.getElementById('capture-photo-btn'),
             switchToUploadBtn: document.getElementById('switch-to-upload-btn'),
-            // cameraSelect: ELIMINADO del DOM
+            // cameraSelect ELIMINADO
         },
         editUserModal: document.getElementById('edit-user-modal'),
         editUserSaveBtn: document.getElementById('edit-user-save-btn'), editUserCancelBtn: document.getElementById('edit-user-cancel-btn'),
@@ -261,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
         qrScannerModal: document.getElementById('qr-scanner-modal'),
         qrReader: document.getElementById('qr-reader'),
         qrScannerCloseBtn: document.getElementById('qr-scanner-close-btn'),
-        // qrCameraSelect: ELIMINADO del DOM
+        // qrCameraSelect ELIMINADO
         areaClosure: {
             modal: document.getElementById('area-closure-modal'),
             title: document.getElementById('area-closure-title'),
@@ -1429,13 +1429,83 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelBtn.addEventListener('click', closeModal, { once: true });
     }
 
+    // --- Cámara Simplificada: getCameraDevices ---
+    async function getCameraDevices() {
+        try {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+                console.warn("Enumeración de dispositivos no soportada.");
+                state.availableCameras = []; // Marcar que no sabemos
+                return;
+            }
+            // Solo intentar obtener permiso, no necesitamos la lista ahora
+            await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            console.log("Permiso de cámara obtenido (o ya existía).");
+             // Podríamos aún listar las cámaras si quisiéramos depurar, pero no las usaremos
+             // const devices = await navigator.mediaDevices.enumerateDevices();
+             // state.availableCameras = devices.filter(device => device.kind === 'videoinput');
+        } catch (err) {
+            console.error("Error al obtener permiso/dispositivos de cámara:", err);
+            // No mostrar toast aquí, ya que el inicio fallará si no hay permiso
+        }
+    }
+    // Ya no necesitamos populateCameraSelectors
+
+    // --- Cámara Simplificada: startCamera ---
+    async function startCamera() {
+        if (state.readOnlyMode) return;
+        const { cameraStream, uploadContainer, cameraViewContainer } = elements.photo;
+
+        stopCamera(); // Detener stream anterior si existe
+
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            // Pedir CUALQUIER cámara
+            const constraints = { video: true };
+
+            try {
+                state.cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+                console.log("Cámara iniciada (por defecto del navegador).");
+
+                cameraStream.srcObject = state.cameraStream;
+                uploadContainer.classList.add('hidden');
+                cameraViewContainer.classList.remove('hidden');
+
+            } catch (err) {
+                showToast('No se pudo acceder a la cámara. Revisa los permisos.', 'error');
+                console.error("Error al acceder a la cámara: ", err);
+                // Si falla aquí, no hay fallback posible
+            }
+        } else {
+            showToast('Tu navegador no soporta el acceso a la cámara.', 'error');
+        }
+    }
+
+    // --- Cámara Simplificada: startQrScanner ---
     async function startQrScanner() {
         if (state.readOnlyMode) return;
         elements.qrScannerModal.classList.add('show');
         if (html5QrCode && html5QrCode.isScanning) {
-            await html5QrCode.stop();
+            try {
+                await html5QrCode.stop();
+            } catch (stopErr) {
+                console.warn("Error menor al detener QR Scanner previo:", stopErr);
+            }
         }
-        html5QrCode = new Html5Qrcode("qr-reader");
+        // Asegurarse de que el elemento existe antes de crear la instancia
+        if (!document.getElementById("qr-reader")){
+             console.error("Elemento qr-reader no encontrado");
+             elements.qrScannerModal.classList.remove('show');
+             showToast("Error interno: No se encuentra el lector QR.", "error");
+             return;
+        }
+        try {
+            html5QrCode = new Html5Qrcode("qr-reader");
+        } catch (initError) {
+             console.error("Error al inicializar Html5Qrcode:", initError);
+             elements.qrScannerModal.classList.remove('show');
+             showToast("Error al inicializar el escáner QR.", "error");
+             return;
+        }
+
 
         const qrCodeSuccessCallback = (decodedText, decodedResult) => {
             stopQrScanner();
@@ -1449,27 +1519,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
-        // --- Cámara Simplificada: Intentar trasera, luego default ---
-        const cameraIdOrConfig = { facingMode: "environment" };
+        // Pedir CUALQUIER cámara (default)
+        const cameraIdOrConfig = undefined; // Dejar que html5-qrcode use la default
 
         html5QrCode.start(
             cameraIdOrConfig,
             config,
             qrCodeSuccessCallback
         ).catch(err => {
-            // Fallback si 'environment' falla (ej. en laptop)
-            console.warn("Fallo al obtener 'environment', intentando con cámara por defecto.");
-            html5QrCode.start(
-                undefined, // Cámara por defecto
-                config,
-                qrCodeSuccessCallback
-            ).catch(fallbackErr => {
-                showToast('Error al iniciar la cámara. Revisa los permisos.', 'error');
-                console.error("Error al iniciar el escaner QR (fallback): ", fallbackErr);
-                stopQrScanner();
-            });
+            showToast('Error al iniciar la cámara para QR. Revisa los permisos.', 'error');
+            console.error("Error al iniciar el escaner QR: ", err);
+            stopQrScanner();
         });
-        // --- Fin Simplificación ---
     }
 
 
@@ -1482,9 +1543,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.qrScannerModal.classList.remove('show');
             });
         } else {
+             // Si no estaba escaneando, solo cerrar el modal
             elements.qrScannerModal.classList.remove('show');
         }
     }
+
 
      function populateAdicionalesFilters() {
         const areaSelect = elements.adicionales.areaFilter;
@@ -2600,67 +2663,15 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.employeeNumberInput.value = '';
     }
 
-    // --- Cámara Simplificada: Detectar si hay cámaras ---
-    async function getCameraDevices() {
-        try {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-                throw new Error("La enumeración de dispositivos no es soportada en este navegador.");
-            }
-            await navigator.mediaDevices.getUserMedia({ video: true, audio: false }); // Pedir permiso
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            state.availableCameras = devices.filter(device => device.kind === 'videoinput');
-            if (state.availableCameras.length === 0) {
-                 console.warn("No se detectaron cámaras de video.");
-                 // Podríamos deshabilitar botones de cámara si no hay ninguna
-            }
-        } catch (err) {
-            console.error("Error al obtener dispositivos de cámara (puede ser falta de permiso):", err);
-        }
-    }
-    // Ya no necesitamos populateCameraSelectors
-
-    async function startCamera() {
-        if (state.readOnlyMode) return;
-        const { cameraStream, uploadContainer, cameraViewContainer } = elements.photo;
-
-        stopCamera();
-
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            // --- Cámara Simplificada: Intentar trasera, luego default ---
-            let constraints = { video: { facingMode: { ideal: 'environment' } } };
-
-            try {
-                state.cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-                console.log("Usando cámara trasera (environment).");
-            } catch (err) {
-                console.warn("Fallo al obtener 'environment', intentando con cámara por defecto:", err);
-                constraints = { video: true }; // Cámara por defecto
-                try {
-                    state.cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-                    console.log("Usando cámara por defecto.");
-                } catch (fallbackErr) {
-                    showToast('No se pudo acceder a ninguna cámara. Revisa los permisos.', 'error');
-                    console.error("Error al acceder a la cámara (fallback): ", fallbackErr);
-                    return; // Salir si ninguna cámara funciona
-                }
-            }
-            // --- Fin Simplificación ---
-
-            cameraStream.srcObject = state.cameraStream;
-            uploadContainer.classList.add('hidden');
-            cameraViewContainer.classList.remove('hidden');
-
-        } else {
-            showToast('Tu navegador no soporta el acceso a la cámara.', 'error');
-        }
-    }
-
+    // --- Cámara Simplificada: stopCamera ---
     function stopCamera() {
         if (state.cameraStream) {
             state.cameraStream.getTracks().forEach(track => track.stop());
             state.cameraStream = null;
+            console.log("Stream de cámara detenido.");
         }
     }
+
 
     function generateInstitutionalAdicionalesReport(options = {}) {
         const institutionalItems = state.additionalItems.filter(item => item.personal === 'No');
@@ -2677,7 +2688,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function initialize() {
         photoDB.init().catch(err => console.error('No se pudo iniciar la base de datos de fotos:', err));
-        getCameraDevices(); // Detectar cámaras al inicio.
+        getCameraDevices(); // Detectar cámaras al inicio (ya no puebla selectores).
 
         elements.employeeLoginBtn.addEventListener('click', handleEmployeeLogin);
         elements.employeeNumberInput.addEventListener('keydown', e => {
@@ -3082,8 +3093,6 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.photo.useCameraBtn.addEventListener('click', startCamera);
 
         // --- Event listeners para selectores de cámara eliminados ---
-        // elements.photo.cameraSelect.addEventListener(...);
-        // elements.qrCameraSelect.addEventListener(...);
 
         elements.photo.switchToUploadBtn.addEventListener('click', () => {
             stopCamera();
@@ -3092,16 +3101,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         elements.photo.captureBtn.addEventListener('click', () => {
             const { cameraStream, photoCanvas, input } = elements.photo;
-            // Asegurarse de que el stream y canvas existen
-            if (!cameraStream || !photoCanvas) {
-                showToast("Error: No se encontró el stream de la cámara o el canvas.", "error");
+             // Asegurarse de que el stream y canvas existen
+            if (!cameraStream || !cameraStream.active || !photoCanvas) {
+                showToast("Error: La cámara no está activa o no se encontró el canvas.", "error");
+                console.error("cameraStream:", cameraStream, "photoCanvas:", photoCanvas);
+                 // Intentar reiniciar la cámara si no está activa
+                if (!cameraStream || !cameraStream.active) {
+                    startCamera(); // Intentar reiniciar
+                }
                 return;
             }
 
             const context = photoCanvas.getContext('2d');
-            photoCanvas.width = cameraStream.videoWidth;
-            photoCanvas.height = cameraStream.videoHeight;
-            context.drawImage(cameraStream, 0, 0, photoCanvas.width, photoCanvas.height);
+             // Verificar dimensiones antes de dibujar
+            if (cameraStream.videoWidth > 0 && cameraStream.videoHeight > 0) {
+                photoCanvas.width = cameraStream.videoWidth;
+                photoCanvas.height = cameraStream.videoHeight;
+                context.drawImage(cameraStream, 0, 0, photoCanvas.width, photoCanvas.height);
+            } else {
+                 showToast("Error: Dimensiones de video inválidas.", "error");
+                 console.error("Dimensiones inválidas:", cameraStream.videoWidth, cameraStream.videoHeight);
+                 return;
+            }
+
 
             photoCanvas.toBlob(blob => {
                 if (blob) {
@@ -3189,7 +3211,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         [elements.noteCancelBtn, elements.photo.closeBtn, elements.editUserCancelBtn, elements.editAdicionalModal.cancelBtn, elements.qrDisplayModal.closeBtn, elements.itemDetailsModal.closeBtn, elements.preprintModal.cancelBtn].forEach(btn =>
             btn.addEventListener('click', () => {
-                stopCamera();
+                stopCamera(); // Asegurarse de detener la cámara al cerrar cualquier modal
                 btn.closest('.modal-overlay').classList.remove('show');
             })
         );
@@ -3608,6 +3630,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // Cargar estado inicial y mostrar la app o el login
         if (loadState()) {
             if (state.loggedIn) {
                 showMainApp();
@@ -3619,7 +3642,7 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.loginPage.classList.remove('hidden');
             elements.mainApp.classList.add('hidden');
         }
-    }
+    } // Fin de initialize()
 
     function renderReportTable(data, title, options = {}) {
         const { withCheckboxes = false, headers = [], isInstitutionalReport = false, reportType = null } = options;
@@ -3641,18 +3664,19 @@ document.addEventListener('DOMContentLoaded', () => {
         data.forEach(item => {
             const row = document.createElement('tr');
             let cells = '';
-            const clave = item['CLAVE UNICA'];
+            const clave = item['CLAVE UNICA']; // Puede ser undefined si es un bien adicional sin regularizar
 
             if (isInstitutionalReport) {
+                // Lógica para reporte institucional
                 const isChecked = state.institutionalReportCheckboxes[item.id] || false;
                 cells = `
                     <td class="px-4 py-4"><input type="checkbox" class="rounded institutional-report-checkbox" data-id="${item.id}" ${isChecked ? 'checked' : ''}></td>
-                    <td class="px-4 py-4 text-sm">${item.descripcion}</td>
+                    <td class="px-4 py-4 text-sm">${item.descripcion || 'N/A'}</td>
                     <td class="px-4 py-4 text-sm">${item.clave || 'N/A'}</td>
                     <td class="px-4 py-4 text-sm">${item.area || 'N/A'}</td>
                     <td class="px-4 py-4 text-sm">${item.marca || 'N/A'}</td>
                     <td class="px-4 py-4 text-sm">${item.serie || 'N/A'}</td>
-                    <td class="px-4 py-4 text-sm">${item.usuario}</td>
+                    <td class="px-4 py-4 text-sm">${item.usuario || 'N/A'}</td>
                     <td class="px-4 py-4">
                         <input type="text" value="${item.claveAsignada || ''}" placeholder="Asignar..." class="new-clave-input w-24 rounded-md border-gray-300 shadow-sm p-2 text-sm" data-id="${item.id}" autocomplete="off">
                     </td>
@@ -3663,22 +3687,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     </td>
                 `;
             } else {
-                if (withCheckboxes && reportType) {
+                 // Lógica para reportes estándar (inventario)
+                if (withCheckboxes && reportType && clave) { // Solo añadir checkbox si hay clave
                     const isChecked = state.reportCheckboxes[reportType] ? (state.reportCheckboxes[reportType][clave] || false) : false;
                     cells += `<td class="px-4 py-4"><input type="checkbox" class="rounded report-item-checkbox" data-clave="${clave}" data-report-type="${reportType}" ${isChecked ? 'checked' : ''}></td>`;
                 }
-                if (headers.includes('Clave Única')) cells += `<td class="px-4 py-4">${clave}</td>`;
-                if (headers.includes('Descripción')) cells += `<td class="px-4 py-4">${item['DESCRIPCION']}</td>`;
-                if (headers.includes('Serie')) cells += `<td class="px-4 py-4">${item['SERIE'] || 'N/A'}</td>`;
-                if (headers.includes('Usuario')) cells += `<td class="px-4 py-4">${item['NOMBRE DE USUARIO'] || 'N/A'}</td>`;
-                if (headers.includes('Marca')) cells += `<td class="px-4 py-4">${item['MARCA'] || 'N/A'}</td>`;
-                if (headers.includes('Modelo')) cells += `<td class="px-4 py-4">${item['MODELO'] || 'N/A'}</td>`;
+                // Añadir celdas basadas en los headers solicitados
+                if (headers.includes('Clave Única')) cells += `<td class="px-4 py-4">${clave || 'N/A'}</td>`;
+                if (headers.includes('Descripción')) cells += `<td class="px-4 py-4">${item['DESCRIPCION'] || item.descripcion || 'N/A'}</td>`; // Compatible con adicional
+                if (headers.includes('Serie')) cells += `<td class="px-4 py-4">${item['SERIE'] || item.serie || 'N/A'}</td>`; // Compatible con adicional
+                if (headers.includes('Usuario')) cells += `<td class="px-4 py-4">${item['NOMBRE DE USUARIO'] || item.usuario || 'N/A'}</td>`; // Compatible con adicional
+                if (headers.includes('Marca')) cells += `<td class="px-4 py-4">${item['MARCA'] || item.marca || 'N/A'}</td>`; // Compatible con adicional
+                if (headers.includes('Modelo')) cells += `<td class="px-4 py-4">${item['MODELO'] || item.modelo || 'N/A'}</td>`; // Compatible con adicional
                 if (headers.includes('Ubicado')) cells += `<td class="px-4 py-4">${item['UBICADO'] || 'NO'}</td>`;
-                if (headers.includes('Área Original')) cells += `<td class="px-4 py-4">${item.areaOriginal}</td>`;
-                if (headers.includes('Nota')) cells += `<td class="px-4 py-4">${state.notes[clave] || 'N/A'}</td>`;
+                if (headers.includes('Área Original')) cells += `<td class="px-4 py-4">${item.areaOriginal || 'N/A'}</td>`;
+                if (headers.includes('Nota') && clave) cells += `<td class="px-4 py-4">${state.notes[clave] || 'N/A'}</td>`;
                 if (headers.includes('Usuario/Área Actual')) {
-                    const currentUser = state.resguardantes.find(u => u.name === item['NOMBRE DE USUARIO']);
-                    cells += `<td class="px-4 py-4">${item['NOMBRE DE USUARIO']} (Área: ${currentUser?.area || 'N/A'})</td>`;
+                    const userName = item['NOMBRE DE USUARIO'] || item.usuario || 'N/A';
+                    const currentUser = state.resguardantes.find(u => u.name === userName);
+                    cells += `<td class="px-4 py-4">${userName} (Área: ${currentUser?.area || 'N/A'})</td>`;
                 }
             }
 
@@ -3827,5 +3854,5 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    initialize();
-});
+    initialize(); // Llamar a initialize al final
+}); // Fin del DOMContentLoaded
