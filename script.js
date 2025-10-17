@@ -11,10 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
         persistentAreas: [],
         serialNumberCache: new Set(),
         cameraStream: null,
-        // --- Cámara v7.17 ---
-        // availableCameras eliminado, ya no se usa para seleccionar
-        // selectedPhotoCameraId y selectedQrCameraId ELIMINADOS
-        // --- Fin Cámara v7.17 ---
+        // Cámara v7.17/7.18 Simplificada - Sin selección
         readOnlyMode: false,
         activityLog: [],
         institutionalReportCheckboxes: {},
@@ -134,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fileInput: document.getElementById('file-input'),
         uploadBtn: document.getElementById('upload-btn'), logoutBtn: document.getElementById('logout-btn'),
         dashboard: {
-            headerAndDashboard: document.getElementById('header-and-dashboard'),
+            headerAndDashboard: document.getElementById('header-and-dashboard'), // Referencia corregida
             toggleBtn: document.getElementById('dashboard-toggle-btn'),
             dailyProgressCard: document.getElementById('daily-progress-card'),
             progressTooltip: document.getElementById('progress-tooltip'),
@@ -177,13 +174,12 @@ document.addEventListener('DOMContentLoaded', () => {
         reports: {
             stats: document.getElementById('general-stats'), userFilter: document.getElementById('report-user-filter'),
             areaFilter: document.getElementById('report-area-filter'),
-            reportButtons: document.querySelectorAll('.report-btn'), // Usa clase genérica
+            reportButtons: document.querySelectorAll('.report-btn'),
             exportLabelsXlsxBtn: document.getElementById('export-labels-xlsx-btn'),
             tableContainer: document.getElementById('report-table-container'),
             tableTitle: document.getElementById('report-table-title'),
             tableBody: document.getElementById('report-table-body'),
             exportXlsxBtn: document.getElementById('export-xlsx-btn'),
-            // printPendingBtn eliminado ya que se usa report-btn
         },
         settings: {
             themes: document.querySelectorAll('[data-theme]'), autosaveInterval: document.getElementById('autosave-interval'),
@@ -195,7 +191,6 @@ document.addEventListener('DOMContentLoaded', () => {
             summaryAuthor: document.getElementById('summary-author'),
             summaryAreaResponsible: document.getElementById('summary-area-responsible'),
             summaryLocation: document.getElementById('summary-location'),
-            // generateSummaryBtn y tasksReportBtn eliminados, usar report-btn
             directoryContainer: document.getElementById('directory-container'),
             directoryCount: document.getElementById('directory-count'),
             aboutHeader: document.getElementById('about-header'),
@@ -480,7 +475,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     institutionalReportCheckboxes: {},
                     actionCheckboxes: { labels: {}, notes: {}, additional: {}, mismatched: {}, personal: {} },
                     reportCheckboxes: { labels: {}, notes: {}, mismatched: {} },
-                    // selectedPhotoCameraId y selectedQrCameraId ya no existen
                 };
                 state = { ...defaultState, ...state, ...loaded };
                 updateSerialNumberCache();
@@ -520,8 +514,6 @@ document.addEventListener('DOMContentLoaded', () => {
             persistentAreas: [],
             serialNumberCache: new Set(),
             cameraStream: null,
-            // availableCameras eliminado, ya no se usa
-            // selectedPhotoCameraId y selectedQrCameraId ya no existen
             readOnlyMode: false,
             activityLog: [],
             institutionalReportCheckboxes: {},
@@ -561,7 +553,6 @@ document.addEventListener('DOMContentLoaded', () => {
             delete stateToSave.serialNumberCache;
             delete stateToSave.cameraStream;
             delete stateToSave.availableCameras; // Asegurarse de no guardar esto
-            // selectedPhotoCameraId y selectedQrCameraId ya no existen
             localStorage.setItem('inventarioProState', JSON.stringify(stateToSave));
         } catch (e) {
             console.error('Error Crítico al guardar el estado:', e);
@@ -651,8 +642,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const contentArea = elements.mainContentArea;
         contentArea.className = 'p-6 rounded-xl shadow-md glass-effect'; // Clase base
-        // Agrega clase específica de tab si es necesario (ya no están en styles.css)
-        // contentArea.classList.add(`bg-tab-${tabName}`);
+        // Agrega clase específica de tab
+        contentArea.classList.add(`bg-tab-${tabName}`);
 
         logActivity('Navegación', `Se cambió a la pestaña: ${tabName}.`);
 
@@ -690,9 +681,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const proceedWithUpload = () => {
             elements.loadingOverlay.overlay.classList.add('show');
-            // Ocultar dashboard con la nueva estructura
-            const headerDashboard = document.getElementById('header-and-dashboard');
-             if (headerDashboard) headerDashboard.classList.add('hidden');
+            const headerDashboard = document.getElementById('header-and-dashboard'); // Nueva referencia
+             if (headerDashboard) headerDashboard.classList.add('hidden'); // Ocultar
 
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -708,13 +698,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     showToast('Error al procesar el archivo. Asegúrate de que el formato es correcto.', 'error');
                 } finally {
                     elements.loadingOverlay.overlay.classList.remove('show');
-                     // Mostrar dashboard de nuevo si existe
-                     if (headerDashboard) headerDashboard.classList.remove('hidden');
+                     if (headerDashboard) headerDashboard.classList.remove('hidden'); // Mostrar de nuevo
                 }
             };
             reader.onerror = () => {
                 elements.loadingOverlay.overlay.classList.remove('show');
-                 if (headerDashboard) headerDashboard.classList.remove('hidden');
+                 if (headerDashboard) headerDashboard.classList.remove('hidden'); // Mostrar de nuevo
                 showToast('Error al leer el archivo.', 'error');
             };
             reader.readAsBinaryString(file);
@@ -1308,10 +1297,10 @@ document.addEventListener('DOMContentLoaded', () => {
         detailView.modelo.textContent = item['MODELO'] || 'N/A';
         detailView.serie.textContent = item['SERIE'] || 'N/A';
         detailView.usuario.textContent = item['NOMBRE DE USUARIO'] || 'Sin Asignar';
-        detailView.area.textContent = areaName; // Añadido para mostrar área original
+        detailView.area.textContent = areaName;
 
-        const warningContainer = detailView.areaWarning; // Añadido
-        warningContainer.innerHTML = ''; // Limpiar advertencias previas
+        const warningContainer = detailView.areaWarning;
+        warningContainer.innerHTML = '';
         warningContainer.className = 'mt-3 p-3 rounded-lg text-sm hidden'; // Ocultar por defecto
 
         const activeUser = state.activeResguardante;
@@ -1424,7 +1413,6 @@ document.addEventListener('DOMContentLoaded', () => {
             saveState();
             renderLoadedLists();
 
-            // Usar showPreprintModal para confirmar datos antes de generar
             showPreprintModal('area_closure', { areaId, responsible, location });
             closeModal(); // Cerrar el modal de entrada de datos
         };
@@ -1439,25 +1427,7 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelBtn.addEventListener('click', closeModal, { once: true });
     }
 
-    // --- Cámara Simplificada v7.17: getCameraDevices ---
-    async function getCameraDevices() {
-        try {
-            // Solo pedir permiso para activar la cámara, no necesitamos la lista
-            await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-            console.log("Permiso de cámara obtenido (o ya existía).");
-        } catch (err) {
-            console.error("Error al obtener permiso de cámara:", err);
-            // Considerar mostrar un toast si el error es grave (ej. NotAllowedError)
-             if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
-                 showToast("Permiso para acceder a la cámara denegado.", "error");
-             } else {
-                 showToast("No se pudo inicializar la cámara.", "warning");
-             }
-        }
-    }
-    // Ya no se necesita populateCameraSelectors
-
-    // --- Cámara Simplificada v7.17: startCamera ---
+    // --- Cámara v7.17: startCamera ---
     async function startCamera() {
         if (state.readOnlyMode) return;
         const { cameraStream, uploadContainer, cameraViewContainer } = elements.photo;
@@ -1469,17 +1439,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 state.cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-                console.log("Usando cámara 'environment'.");
+                console.log("Usando cámara 'environment' para fotos.");
 
                 cameraStream.srcObject = state.cameraStream;
                 uploadContainer.classList.add('hidden');
                 cameraViewContainer.classList.remove('hidden');
 
             } catch (err) {
-                // Si 'environment' falla, mostrar error (no hay fallback en esta versión)
+                // Si 'environment' falla, mostrar error (no hay fallback en esta versión específica)
                 showToast('No se pudo acceder a la cámara trasera. Revisa los permisos.', 'error');
-                console.error("Error al acceder a la cámara 'environment': ", err);
-                 // Opcional: mostrar opciones de subida de nuevo si falla
+                console.error("Error al acceder a la cámara 'environment' para fotos: ", err);
+                 // Mostrar opciones de subida de nuevo si falla
                  uploadContainer.classList.remove('hidden');
                  cameraViewContainer.classList.add('hidden');
             }
@@ -1488,7 +1458,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Cámara Simplificada v7.17: startQrScanner ---
+    // --- Cámara v7.17: startQrScanner ---
     async function startQrScanner() {
         if (state.readOnlyMode) return;
         elements.qrScannerModal.classList.add('show');
@@ -1515,7 +1485,6 @@ document.addEventListener('DOMContentLoaded', () => {
              return;
         }
 
-
         const qrCodeSuccessCallback = (decodedText, decodedResult) => {
             stopQrScanner();
             elements.inventory.searchInput.value = decodedText;
@@ -1534,7 +1503,7 @@ document.addEventListener('DOMContentLoaded', () => {
             config,
             qrCodeSuccessCallback
         ).catch(err => {
-            // Si falla 'environment', mostrar error (sin fallback)
+            // Si falla 'environment', mostrar error (sin fallback en esta versión)
             showToast('Error al iniciar cámara trasera para QR. Revisa permisos.', 'error');
             console.error("Error al iniciar el escaner QR con 'environment': ", err);
             stopQrScanner(); // Cerrar modal si falla
@@ -1806,9 +1775,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function generatePrintableResguardo(title, user, items, isAdicional = false, options = {}) {
         const {
             areaFullName = 'Área no especificada',
-            entrega,
-            recibe,
-            recibeCargo
+            entrega, // Nombre de quien entrega (Responsable de Área)
+            recibe, // Nombre de quien recibe (Usuario / Filtro)
+            recibeCargo // Cargo de quien entrega
         } = options;
 
          if (!user || user === 'all') {
@@ -1818,7 +1787,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return showToast(`No se encontraron bienes para el filtro seleccionado.`, 'error');
         }
 
-        logActivity('Resguardo Impreso', `Resguardo para ${user} con ${items.length} bienes.`);
+        logActivity('Resguardo Impreso', `Resguardo para ${recibe} con ${items.length} bienes.`); // Usa 'recibe' aquí
 
         const printWindow = window.open('', '_blank');
 
@@ -1858,10 +1827,10 @@ document.addEventListener('DOMContentLoaded', () => {
         printWindow.document.write(`<div class="header-date">${dateFormatted}</div>`);
         printWindow.document.write('</div>');
 
-        const responsibleName = (isAdicional) ? areaFullName : user;
+        const responsibleName = recibe; // Usar el nombre de quien recibe
         const introText = isAdicional
             ? `Por medio de la presente, se hace constar que <strong>${responsibleName}</strong> cuenta con los siguientes bienes adicionales:`
-            : `Quedo enterado, yo <strong>${user}</strong> que los Bienes Muebles que se encuentran listados en el presente resguardo, están a partir de la firma del mismo, bajo mi buen uso, custodia, vigilancia y conservación, en caso de daño, robo o extravio, se deberá notificar de inmediato a el Área Administrativa o Comisión para realizar el trámite administrativo correspondiente, por ningún motivo se podra cambiar o intercambiar los bienes sin previa solicitud y autorización de el Área Administrativa o Comisión.`;
+            : `Quedo enterado, yo <strong>${responsibleName}</strong> que los Bienes Muebles que se encuentran listados en el presente resguardo, están a partir de la firma del mismo, bajo mi buen uso, custodia, vigilancia y conservación, en caso de daño, robo o extravio, se deberá notificar de inmediato a el Área Administrativa o Comisión para realizar el trámite administrativo correspondiente, por ningún motivo se podra cambiar o intercambiar los bienes sin previa solicitud y autorización de el Área Administrativa o Comisión.`;
 
         printWindow.document.write(`<p class="main-text">${introText}</p>`);
 
@@ -2008,7 +1977,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => printWindow.print(), 500);
     }
 
-    function generateTasksReport(returnAsHtml = false) {
+    function generateTasksReport(options = {}) {
         const itemsWithNotes = Object.keys(state.notes).filter(key => state.notes[key].trim() !== '');
         const itemsWithPendingLabels = state.inventory.filter(item => item['IMPRIMIR ETIQUETA'] === 'SI');
         const additionalItems = state.additionalItems;
@@ -2018,7 +1987,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (itemsWithNotes.length === 0 && itemsWithPendingLabels.length === 0 && additionalItems.length === 0 && mismatchedItems.length === 0 && itemsARegularizar.length === 0) {
             const noTasksHtml = '<h2>¡Excelente! No hay acciones pendientes.</h2>';
-            if (returnAsHtml) {
+            if (options.returnAsHtml) {
                 return `<h2>Plan de Acción Recomendado</h2>${noTasksHtml}`;
             }
              logActivity('Plan de Acción', 'Generado sin acciones pendientes.');
@@ -2108,7 +2077,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </tbody>
         </table>`;
 
-        if (returnAsHtml) {
+        if (options.returnAsHtml) {
             return `<h2>Plan de Acción Recomendado</h2>${content}`;
         }
 
@@ -2132,7 +2101,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => printWindow.print(), 500);
     }
 
-    function generateInventoryReport() {
+    function generateInventoryReport(options = {}) {
         const selectedUser = elements.reports.userFilter.value;
         const selectedArea = elements.reports.areaFilter.value;
 
@@ -2492,10 +2461,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function renderDirectory() {
         const container = elements.settings.directoryContainer;
-        const countEl = elements.settings.directoryCount; // Asegúrate de que este ID existe en tu HTML si quieres mostrar el conteo
+        const countEl = elements.settings.directoryCount;
         const areas = Object.keys(state.areaDirectory);
 
-        if (countEl) countEl.textContent = `Total: ${areas.length}`;
+        countEl.textContent = `Total: ${areas.length}`;
 
         if (areas.length === 0) {
             container.innerHTML = '<p class="text-gray-500">No se han cargado áreas con información de responsable.</p>';
@@ -2680,7 +2649,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function initialize() {
         photoDB.init().catch(err => console.error('No se pudo iniciar la base de datos de fotos:', err));
-        getCameraDevices(); // Detectar cámaras al inicio.
+        // getCameraDevices eliminado, no necesitamos listar si no seleccionamos
 
         elements.employeeLoginBtn.addEventListener('click', handleEmployeeLogin);
         elements.employeeNumberInput.addEventListener('keydown', e => {
@@ -2691,14 +2660,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         elements.dashboard.toggleBtn.addEventListener('click', () => {
-            const dashboardContainer = document.getElementById('dashboard-container');
-            const headerAndDashboard = document.getElementById('header-and-dashboard');
-            if (dashboardContainer && headerAndDashboard) {
-                headerAndDashboard.classList.toggle('hidden');
+            // Referencia corregida
+            const headerDashboard = document.getElementById('header-and-dashboard');
+            if (headerDashboard) {
+                headerDashboard.classList.toggle('hidden');
             } else {
-                 console.error("No se encontró el contenedor del dashboard para ocultar/mostrar.");
+                 console.error("No se encontró #header-and-dashboard para ocultar/mostrar.");
             }
         });
+
 
         elements.logo.title.addEventListener('click', () => {
             logoClickCount++;
@@ -2935,14 +2905,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (newSerie && state.serialNumberCache.has(newSerie.toLowerCase())) {
                 return showToast('Advertencia: La serie de este bien ya existe en el inventario.', 'warning');
             }
-             const newClave = newItem.clave.trim(); // Verificar clave también
+             const newClave = newItem.clave.trim();
              if (newClave && state.serialNumberCache.has(newClave.toLowerCase())) {
                 return showToast('Advertencia: La clave única de este bien ya existe en el inventario.', 'warning');
              }
 
             newItem.usuario = state.activeResguardante.name;
-            newItem.id = generateUUID(); // Usar UUID
-            newItem.fechaRegistro = new Date().toISOString(); // Añadir fecha de registro
+            newItem.id = generateUUID();
+            newItem.fechaRegistro = new Date().toISOString();
 
             const finalizeItemAddition = (item) => {
                 state.additionalItems.push(item);
@@ -2951,7 +2921,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.adicionales.form.reset();
                 document.getElementById('ad-clave').value = '';
                 document.querySelector('#adicional-form input[name="personal"][value="No"]').checked = true;
-                // Limpiar feedback de duplicados
                 document.getElementById('ad-clave-feedback').textContent = '';
                 document.getElementById('ad-serie-feedback').textContent = '';
                 renderAdicionalesList(); saveState(); renderDashboard(); updateSerialNumberCache();
@@ -2978,24 +2947,24 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.adicionales.userFilter.addEventListener('change', renderAdicionalesList);
 
         elements.adicionales.list.addEventListener('click', e => {
-             if (state.readOnlyMode) return; // Añadir chequeo de solo lectura
+             if (state.readOnlyMode) return;
 
             const editBtn = e.target.closest('.edit-adicional-btn');
             const deleteBtn = e.target.closest('.delete-adicional-btn');
             const photoBtn = e.target.closest('.adicional-photo-btn');
 
-            const id = editBtn?.dataset.id || deleteBtn?.dataset.id || photoBtn?.dataset.id; // Usar UUID
+            const id = editBtn?.dataset.id || deleteBtn?.dataset.id || photoBtn?.dataset.id;
 
             if (!id) return;
 
-             const item = state.additionalItems.find(i => i.id === id); // Buscar por UUID
+             const item = state.additionalItems.find(i => i.id === id);
              if (!item) {
                  console.error("No se encontró el bien adicional con ID:", id);
                  return;
              }
 
 
-            if (editBtn) showEditAdicionalModal(id); // Pasar UUID
+            if (editBtn) showEditAdicionalModal(id);
             if (deleteBtn) {
                  showConfirmationModal('Eliminar Bien Adicional', `¿Seguro que quieres eliminar "${item.descripcion}"?`, () => {
                     state.additionalItems = state.additionalItems.filter(i => i.id !== id);
@@ -3009,29 +2978,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     showToast('Bien adicional eliminado.');
                 });
             }
-            if (photoBtn) showPhotoModal('additional', id); // Pasar UUID
+            if (photoBtn) showPhotoModal('additional', id);
         });
 
 
         elements.reports.exportXlsxBtn.addEventListener('click', exportInventoryToXLSX);
         elements.reports.exportLabelsXlsxBtn.addEventListener('click', exportLabelsToXLSX);
-        // Usar la clase .report-btn para todos los botones de reporte
+
         elements.reports.reportButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const reportType = button.dataset.reportType;
                 if (!reportType) return;
-                // Usar preprint modal para reportes que lo necesiten
                 const needsPreprint = ['session_summary', 'area_closure', 'simple_pending', 'individual_resguardo', 'adicionales_informe'];
                 if (needsPreprint.includes(reportType)) {
                      showPreprintModal(reportType);
                 } else {
-                    // Generar reporte directamente si no necesita preimpresión
                     const reportConfig = {
                         'inventory': generateInventoryReport,
                         'tasks_report': generateTasksReport,
                         'labels': () => renderReportTable(state.inventory.filter(item => item['IMPRIMIR ETIQUETA'] === 'SI'), 'Reporte de Etiquetas', { withCheckboxes: true, reportType: 'labels', headers: ['Acción', 'Clave Única', 'Descripción', 'Usuario'] }),
                         'pending': () => renderReportTable(state.inventory.filter(item => item.UBICADO !== 'SI'), 'Reporte de Bienes Pendientes', { withCheckboxes: false, headers: ['Clave Única', 'Descripción', 'Serie', 'Área Original'] }),
-                        'notes': () => renderReportTable(state.inventory.filter(item => state.notes[item['CLAVE UNICA']]), 'Reporte de Notas', { withCheckboxes: true, reportType: 'notes', headers: ['Acción', 'Clave Única', 'Descripción', 'Nota'] }),
+                        'notes': () => renderReportTable(state.inventory.filter(item => state.notes[item['CLAVE UNICA']]), 'Reporte de Notas', { withCheckboxes: true, reportType: 'notes', cols: ['Acción', 'Clave Única', 'Descripción', 'Nota'] }),
                         'mismatched': () => renderReportTable(state.inventory.filter(item => item.areaIncorrecta), 'Reporte de Bienes Fuera de Área', { withCheckboxes: true, reportType: 'mismatched', headers: ['Acción', 'Clave Única', 'Descripción', 'Área Original', 'Usuario/Área Actual'] }),
                         'institutional_adicionales': generateInstitutionalAdicionalesReport
                     };
@@ -3047,7 +3014,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(state.readOnlyMode) return;
             const saveBtn = e.target.closest('.save-new-clave-btn');
             if (saveBtn) {
-                const itemId = saveBtn.dataset.id; // Usar UUID
+                const itemId = saveBtn.dataset.id;
                 const row = saveBtn.closest('tr');
                 const input = row.querySelector('.new-clave-input');
                 const newClave = input.value.trim();
@@ -3059,7 +3026,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
-                const itemIndex = state.additionalItems.findIndex(i => i.id === itemId); // Buscar por UUID
+                const itemIndex = state.additionalItems.findIndex(i => i.id === itemId);
                 if (itemIndex !== -1) {
                     state.additionalItems[itemIndex].claveAsignada = newClave;
                     updateSerialNumberCache();
@@ -3081,7 +3048,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             else if (checkbox.classList.contains('institutional-report-checkbox')) {
-                const itemId = checkbox.dataset.id; // UUID
+                const itemId = checkbox.dataset.id;
                 if (itemId) {
                     state.institutionalReportCheckboxes[itemId] = checkbox.checked;
                     saveState();
@@ -3089,7 +3056,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             else if (checkbox.classList.contains('action-plan-checkbox')) {
                 const type = checkbox.dataset.type;
-                const id = checkbox.dataset.id; // Puede ser clave (string) o ID (UUID string)
+                const id = checkbox.dataset.id;
                 if (type && id && state.actionCheckboxes[type]) {
                     state.actionCheckboxes[type][id] = checkbox.checked;
                     saveState();
@@ -3110,8 +3077,8 @@ document.addEventListener('DOMContentLoaded', () => {
             filterAndRenderInventory(); saveState();
         });
         elements.editAdicionalModal.saveBtn.addEventListener('click', () => {
-            const id = elements.editAdicionalModal.saveBtn.dataset.id; // UUID
-            const itemIndex = state.additionalItems.findIndex(i => i.id === id); // Buscar por UUID
+            const id = elements.editAdicionalModal.saveBtn.dataset.id;
+            const itemIndex = state.additionalItems.findIndex(i => i.id === id);
             if (itemIndex === -1) return;
             const formData = new FormData(elements.editAdicionalModal.form);
             const updatedData = Object.fromEntries(formData.entries());
@@ -3123,8 +3090,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         elements.photo.useCameraBtn.addEventListener('click', startCamera);
-
-        // --- Event listeners para selectores de cámara eliminados ---
+        // Event listeners para selectores de cámara eliminados
 
         elements.photo.switchToUploadBtn.addEventListener('click', () => {
             stopCamera();
@@ -3133,19 +3099,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         elements.photo.captureBtn.addEventListener('click', () => {
              const { cameraStream, photoCanvas, input } = elements.photo;
-            // Asegurarse de que el stream y canvas existen y stream está activo
             if (!cameraStream || !cameraStream.active || !photoCanvas) {
                 showToast("Error: La cámara no está activa o no se encontró el canvas.", "error");
                 console.error("cameraStream:", cameraStream, "photoCanvas:", photoCanvas);
-                 // Intentar reiniciar la cámara si no está activa
                 if (!cameraStream || !cameraStream.active) {
-                    startCamera(); // Intentar reiniciar
+                    startCamera();
                 }
                 return;
             }
 
             const context = photoCanvas.getContext('2d');
-             // Verificar dimensiones antes de dibujar
             if (cameraStream.videoWidth > 0 && cameraStream.videoHeight > 0) {
                 photoCanvas.width = cameraStream.videoWidth;
                 photoCanvas.height = cameraStream.videoHeight;
@@ -3160,7 +3123,7 @@ document.addEventListener('DOMContentLoaded', () => {
             photoCanvas.toBlob(blob => {
                 if (blob) {
                     const type = input.dataset.type;
-                    const id = input.dataset.id; // Clave o UUID
+                    const id = input.dataset.id;
                     if (blob.size > 2 * 1024 * 1024) return showToast('La imagen es demasiado grande (máx 2MB).', 'error');
 
                     photoDB.setItem(`${type}-${id}`, blob).then(() => {
@@ -3179,11 +3142,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
 
-
         elements.photo.input.addEventListener('change', e => {
             const file = e.target.files[0];
             const type = e.target.dataset.type;
-            const id = e.target.dataset.id; // Clave o UUID
+            const id = e.target.dataset.id;
             if (file && type && id) {
                 if (file.size > 2 * 1024 * 1024) return showToast('La imagen es demasiado grande (máx 2MB).', 'error');
                 photoDB.setItem(`${type}-${id}`, file).then(() => {
@@ -3199,7 +3161,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         elements.photo.deleteBtn.addEventListener('click', e => {
             const type = e.target.dataset.type;
-            const id = e.target.dataset.id; // Clave o UUID
+            const id = e.target.dataset.id;
             showConfirmationModal('Eliminar Foto', `¿Seguro que quieres eliminar la foto?`, () => {
                 photoDB.deleteItem(`${type}-${id}`).then(() => {
                     if (type === 'inventory') { delete state.photos[id]; filterAndRenderInventory(); updateDetailViewPhoto(id); }
@@ -3214,8 +3176,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         elements.editUserSaveBtn.addEventListener('click', e => {
-            const index = parseInt(e.target.dataset.userIndex, 10);
-             // Añadir validación del índice
+             const index = parseInt(e.target.dataset.userIndex, 10);
              if (isNaN(index) || index < 0 || index >= state.resguardantes.length) {
                  console.error("Índice inválido al guardar usuario:", index);
                  return showToast("Error al guardar: usuario no encontrado.", "error");
@@ -3761,7 +3722,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const selectedArea = elements.reports.areaFilter.value;
         const selectedUser = elements.reports.userFilter.value;
-        const areaId = selectedArea !== 'all' ? selectedArea : (state.resguardantes.find(u => u.name === selectedUser)?.area || null);
+        // Determinar areaId basado en si se filtra por área o por usuario
+        const areaId = selectedArea !== 'all'
+            ? selectedArea
+            : (selectedUser !== 'all' ? state.resguardantes.find(u => u.name === selectedUser)?.area : null); // Si no hay filtro, areaId es null
         const areaResponsibleData = areaId ? state.areaDirectory[areaId] : null;
 
 
@@ -3773,9 +3737,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     areaResponsible: elements.settings.summaryAreaResponsible.value.trim(),
                     location: elements.settings.summaryLocation.value.trim()
                 };
+                 // Validar que los campos no estén vacíos
+                 if (!defaultValues.author || !defaultValues.location) {
+                    showToast('Completa los campos "Realizado por" y "Ubicación Física" en Ajustes.', 'warning');
+                    return; // No mostrar modal si faltan datos base
+                 }
                 fieldsHtml = `
                     <div><label class="block text-sm font-medium">Ubicación Física del Inventario:</label><input type="text" id="preprint-location" class="mt-1 block w-full p-2 border rounded-md" value="${defaultValues.location}"></div>
-                    <div><label class="block text-sm font-medium">Realizado por (Entrega):</label><input type="text" id="preprint-author" class="mt-1 block w-full p-2 border rounded-md" value="${defaultValues.author}"></div>
+                    <div><label class="block text-sm font-medium">Realizado por (Entrega):</label><input type="text" id="preprint-author" class="mt-1 block w-full p-2 border rounded-md" value="${defaultValues.author}" readonly></div>
                     <div><label class="block text-sm font-medium">Responsable del Área (Recibe):</label><input type="text" id="preprint-areaResponsible" class="mt-1 block w-full p-2 border rounded-md" value="${defaultValues.areaResponsible}"></div>
                 `;
                 break;
@@ -3783,23 +3752,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 titleText = 'Generar Acta de Cierre de Área';
                 defaultValues = {
                     areaId: data.areaId,
-                    responsible: data.responsible,
-                    location: data.location,
+                    responsible: data.responsible, // Quien recibe físicamente
+                    location: data.location, // Ubicación de firma
                     areaFullName: state.areaNames[data.areaId] || `Área ${data.areaId}`,
-                    entrega: state.currentUser.name,
-                    recibe: data.responsible,
-                    recibeCargo: state.areaDirectory[data.areaId]?.name || 'Responsable de Área' // Intentar obtener nombre real
+                    entrega: state.currentUser.name, // Quien realizó el inventario
+                    recibe: data.responsible, // Quien recibe físicamente, coincide con el input del modal anterior
+                    recibeCargo: state.areaDirectory[data.areaId]?.title || 'Responsable de Área' // Cargo oficial del área
                 };
-                 // Corregir para usar 'title' del directorio si existe
-                 if (state.areaDirectory[data.areaId]?.title) {
-                     defaultValues.recibeCargo = state.areaDirectory[data.areaId].title;
-                 } else {
-                     defaultValues.recibeCargo = 'Responsable de Área'; // Fallback
+                 // Usar nombre del directorio como cargo si no hay título específico
+                 if (!state.areaDirectory[data.areaId]?.title && state.areaDirectory[data.areaId]?.name) {
+                      defaultValues.recibeCargo = state.areaDirectory[data.areaId].name; // Usar el nombre si no hay cargo
                  }
+
                 fieldsHtml = `
                     <div><label class="block text-sm font-medium">Nombre Completo del Área:</label><input type="text" id="preprint-areaFullName" class="mt-1 block w-full p-2 border rounded-md" value="${defaultValues.areaFullName}"></div>
                     <div><label class="block text-sm font-medium">Ubicación de Firma:</label><input type="text" id="preprint-location" class="mt-1 block w-full p-2 border rounded-md" value="${defaultValues.location}"></div>
-                    <div><label class="block text-sm font-medium">Entrega (Inventario):</label><input type="text" id="preprint-entrega" class="mt-1 block w-full p-2 border rounded-md" value="${defaultValues.entrega}"></div>
+                    <div><label class="block text-sm font-medium">Entrega (Inventario):</label><input type="text" id="preprint-entrega" class="mt-1 block w-full p-2 border rounded-md" value="${defaultValues.entrega}" readonly></div>
                     <div><label class="block text-sm font-medium">Recibe de Conformidad:</label><input type="text" id="preprint-recibe" class="mt-1 block w-full p-2 border rounded-md" value="${defaultValues.recibe}"></div>
                     <div><label class="block text-sm font-medium">Cargo de Quien Recibe:</label><input type="text" id="preprint-recibeCargo" class="mt-1 block w-full p-2 border rounded-md" value="${defaultValues.recibeCargo}"></div>
                 `;
@@ -3809,11 +3777,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 defaultValues = {
                     areaDisplay: selectedArea !== 'all' ? `${selectedArea} - ${state.areaNames[selectedArea] || 'Área Desconocida'}` : 'Todas las Áreas',
                     entrega: state.currentUser.name,
-                    recibe: "_________________________"
+                    recibe: areaResponsibleData?.name || "_________________________" // Usar responsable de área si existe
                 };
                 fieldsHtml = `
                     <div><label class="block text-sm font-medium">Reporte para:</label><input type="text" id="preprint-areaDisplay" class="mt-1 block w-full p-2 border rounded-md" value="${defaultValues.areaDisplay}"></div>
-                    <div><label class="block text-sm font-medium">Realizó (Entrega):</label><input type="text" id="preprint-entrega" class="mt-1 block w-full p-2 border rounded-md" value="${defaultValues.entrega}"></div>
+                    <div><label class="block text-sm font-medium">Realizó (Entrega):</label><input type="text" id="preprint-entrega" class="mt-1 block w-full p-2 border rounded-md" value="${defaultValues.entrega}" readonly></div>
                     <div><label class="block text-sm font-medium">Recibe Copia:</label><input type="text" id="preprint-recibe" class="mt-1 block w-full p-2 border rounded-md" value="${defaultValues.recibe}"></div>
                 `;
                 break;
@@ -3821,13 +3789,13 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'adicionales_informe':
                 titleText = 'Imprimir Resguardo';
                 const isAdicional = reportType === 'adicionales_informe';
-                let userForReport = selectedUser !== 'all' ? selectedUser : (isAdicional ? 'el Área' : 'Usuario');
+                let userForReport = selectedUser !== 'all' ? selectedUser : (isAdicional ? 'el Área' : 'Usuario'); // Quien recibe
 
                 defaultValues = {
-                    areaFullName: areaId !== 'all' && areaId ? (state.areaNames[areaId] || `Área ${areaId}`) : 'Todas las Áreas',
-                    entrega: areaResponsibleData?.name || '_________________________',
-                    recibe: userForReport,
-                    recibeCargo: areaResponsibleData?.title || 'Responsable de Área'
+                    areaFullName: areaId && areaId !== 'all' ? (state.areaNames[areaId] || `Área ${areaId}`) : 'Todas las Áreas',
+                    entrega: areaResponsibleData?.name || '_________________________', // Responsable del área entrega
+                    recibe: userForReport, // Usuario o "el Área" recibe
+                    recibeCargo: areaResponsibleData?.title || 'Responsable de Área' // Cargo de quien entrega
                 };
 
                 fieldsHtml = `
@@ -3838,7 +3806,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
                 break;
             default:
-                // Si no necesita preimpresión, simplemente no mostramos el modal y ejecutamos directo
+                // Ejecutar directamente si no requiere preimpresión
                 const reportConfig = {
                     'inventory': generateInventoryReport,
                     'tasks_report': generateTasksReport,
@@ -3851,25 +3819,36 @@ document.addEventListener('DOMContentLoaded', () => {
                  if (reportConfig[reportType]) {
                     reportConfig[reportType]();
                 } else {
-                    console.error("Tipo de reporte desconocido:", reportType);
+                     console.error("Tipo de reporte desconocido:", reportType);
+                     showToast("Tipo de reporte no reconocido.", "error");
                 }
-                return; // Salir, no mostrar modal
+                return; // No mostrar modal
         }
 
+        // Si llegamos aquí, mostramos el modal de preimpresión
         title.textContent = titleText;
         fieldsContainer.innerHTML = fieldsHtml;
         modal.classList.add('show');
-        handleModalNavigation(modal);
+        handleModalNavigation(modal); // Hacer modal accesible
 
         confirmBtn.onclick = () => {
             const updatedOptions = { ...defaultValues };
             const inputs = fieldsContainer.querySelectorAll('input');
             inputs.forEach(input => {
                 const key = input.id.replace('preprint-', '');
-                 if (updatedOptions.hasOwnProperty(key)) { // Asegurarse de que la clave exista
-                    updatedOptions[key] = input.value;
+                 if (updatedOptions.hasOwnProperty(key)) {
+                    updatedOptions[key] = input.value.trim(); // Usar trim para limpiar espacios
                  }
             });
+
+             // Validación simple para campos comunes
+            if ((reportType === 'session_summary' && (!updatedOptions.areaResponsible || !updatedOptions.location)) ||
+                (reportType === 'area_closure' && (!updatedOptions.recibe || !updatedOptions.location)) ||
+                (reportType === 'simple_pending' && !updatedOptions.recibe) ||
+                ((reportType === 'individual_resguardo' || reportType === 'adicionales_informe') && (!updatedOptions.entrega || !updatedOptions.recibe))) {
+                return showToast('Por favor, completa todos los campos requeridos.', 'warning');
+            }
+
 
             switch (reportType) {
                 case 'session_summary':
@@ -3882,24 +3861,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     generateSimplePendingReport(updatedOptions);
                     break;
                 case 'individual_resguardo':
-                     if (!selectedUser || selectedUser === 'all') return showToast('Selecciona un usuario.', 'error');
+                     if (!selectedUser || selectedUser === 'all') return showToast('Selecciona un usuario en los filtros de reporte.', 'error');
                      const userItems = state.inventory.filter(item => item['NOMBRE DE USUARIO'] === selectedUser);
                      generatePrintableResguardo('Resguardo de Bienes Individual', updatedOptions.recibe, userItems, false, updatedOptions);
                      break;
                 case 'adicionales_informe':
                     let itemsToPrint = state.additionalItems;
                     let reportTitle = selectedUser;
+                    let areaIdForReport = selectedArea;
 
                     if (selectedArea !== 'all') {
                         const usersInArea = state.resguardantes.filter(u => u.area === selectedArea).map(u => u.name);
                         itemsToPrint = itemsToPrint.filter(item => usersInArea.includes(item.usuario));
-                         // Usar el nombre del área si no hay usuario específico
                         reportTitle = (selectedUser === 'all') ? (state.areaNames[selectedArea] || `Área ${selectedArea}`) : selectedUser;
                     }
                     if (selectedUser !== 'all') {
                         itemsToPrint = itemsToPrint.filter(item => item.usuario === selectedUser);
                         reportTitle = selectedUser;
+                        areaIdForReport = state.resguardantes.find(u => u.name === selectedUser)?.area; // Obtener área del usuario
                     }
+                     // Asegurar que usamos el nombre correcto para la firma
+                    updatedOptions.recibe = reportTitle === `el Área ${areaIdForReport}` ? updatedOptions.entrega : reportTitle;
+
                     generatePrintableResguardo('Informe de Bienes Adicionales', updatedOptions.recibe, itemsToPrint, true, updatedOptions);
                     break;
             }
